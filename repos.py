@@ -198,6 +198,8 @@ def update_mirror(name, repo, gitdir):
 
 
 def checkout(name, repo, ref, checkoutdir):
+    import pdb
+    pdb.set_trace()
     gitdir = os.path.join(app.settings['gits'], get_repo_name(repo))
     if not os.path.exists(gitdir):
         mirror(name, repo)
@@ -206,7 +208,8 @@ def checkout(name, repo, ref, checkoutdir):
     # checkout the required version of this from git
     with app.chdir(checkoutdir), open(os.devnull, "w") as fnull:
         copy_repo(gitdir, checkoutdir)
-        if call(['git', 'checkout', ref], stdout=fnull, stderr=fnull):
+        if call(['git', 'checkout', '--force', ref], stdout=fnull,
+                stderr=fnull):
             app.exit(name, 'ERROR: git checkout failed for', ref)
 
         app.log(name, 'Git checkout %s in %s' % (repo, checkoutdir))
