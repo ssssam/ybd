@@ -159,7 +159,7 @@ def argv_to_string(argv):
     return ' '.join(map(pipes.quote, argv))
 
 
-def run_sandboxed(this, command, allow_parallel=False):
+def run_sandboxed(this, command, allow_parallel=False, use_fakeroot=False):
     app.log(this, 'Running command:\n%s' % command)
     with open(this['log'], "a") as logfile:
         logfile.write("# # %s\n" % command)
@@ -210,7 +210,15 @@ def run_sandboxed(this, command, allow_parallel=False):
             extra_mounts=mounts,
         ))
 
-    argv = ['sh', '-c', command]
+    if use_fakeroot:
+        argv = ['fakeroot', '--', 'sh', '-c', command]
+        # Fakeroot needs to connect to `faked` via a TCP socket, this doesn't
+        # work if we pass '--unshare-net'. Pseudo seems like an alternative
+        # Fakeroot that doesn't require a daemon -- maybe that would work.
+        sandbox_config['network'] = 'undefined'
+    else:
+        argv = ['sh', '-c', command]
+        sandbox_config['network'] = 'isolated'
 
     cur_makeflags = os.environ.get("MAKEFLAGS")
 

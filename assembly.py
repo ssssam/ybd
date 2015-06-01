@@ -130,7 +130,8 @@ def build(this):
             app.log(this, 'Running', build_step)
         for command in this.get(build_step, []):
             sandbox.run_sandboxed(this, command,
-                                  allow_parallel=('build' in build_step))
+                                  allow_parallel=('build' in build_step),
+                                  use_fakeroot=('install' in build_step))
 
     if this.get('devices'):
         sandbox.create_devices(this)
