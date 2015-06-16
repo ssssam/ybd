@@ -1,0 +1,69 @@
+# Ansible playbook to deploy Sam's YBD continuous build hack.
+#
+# Work in progress / example.
+#
+# Tested on a Baserock 15.19.2 devel system on x86_64, so far.
+---
+- hosts: all
+  tasks:
+    # Setup for morph cache server
+    - name: cache user
+      user: name=cache
+
+    # These aren't in Baserock right now, so fetch from Pip.
+    - name: arrow date & time library
+      pip: name=arrow
+
+    - name: yoyo-migrations library
+      pip: name=yoyo-migrations
+
+    # This is in Baserock but is too old
+    - name: bottle web framework
+      pip: name=bottle state=latest
+
+    - name: morph-cache-server source code
+      git:
+        accept_hostkey: yes
+        repo: git://git.baserock.org/baserock/baserock/morph-cache-server
+        version: sam/reproducible-builds
+        dest: /home/cache/morph-cache-server
+      sudo: yes
+      sudo_user: cache
+
+    - name: morph-cache-server config file
+      copy: src=morph-cache-server.conf dest=/etc/morph-cache-server.conf
+
+    - name: morph-cache-server service file
+      copy: src=morph-cache-server.service dest=/etc/systemd/system/morph-cache-server.service
+
+    - name: morph-cache-server service
+      service: name=morph-cache-server enabled=yes state=restarted
+
+    # Setup for YBD and YBD autobuilder
+
+    # YBD has to be run as 'root' still, but we keep its data in /home/build
+    - name: build user
+      user: name=build
+
+    # sandboxlib isn't in Baserock 15.19, install it with 'pip' for now
+    - name: sandboxlib library
+      pip: name=sandboxlib
+
+    - name: YBD source code
+      git:
+        accept_hostkey: yes
+        repo: git://github.com/devcurmudgeon/ybd
+        version: master
+        dest: /home/build/ybd
+      sudo: yes
+      sudo_user: build
+
+    - name: run-ybd script
+      copy: src=run-ybd.py dest=/home/build/run-ybd.py
+
+    - name: ybd-continuous service file
+      copy: src=ybd-continuous.service dest=/etc/systemd/system/ybd-continuous.service
+
+    # WE ARE GO!
+    - name: ybd-continuous service
+      service: name=ybd-continuous enabled=yes state=restarted

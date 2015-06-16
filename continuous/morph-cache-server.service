@@ -1,0 +1,16 @@
+# Temporary way of running morph-cache-server.
+# We should use a real web server instead, like lighttpd.
+
+[Install]
+WantedBy = multi-user.target
+
+[Unit]
+Description = Debug instance of morph-cache-server
+After = network.target
+
+[Service]
+ExecStart=/usr/bin/python /home/cache/morph-cache-server/morph-cache-server --no-fcgi-server
+
+# This is necessary for Bottle to find the templates, which suggests I have
+# done something wrong in the code.
+WorkingDirectory=/home/cache/morph-cache-server

@@ -1,0 +1,11 @@
+# Permanent YBD.
+
+[Install]
+WantedBy = multi-user.target
+
+[Unit]
+Description = Permanent YBD
+After = network.target
+
+[Service]
+ExecStart=/usr/bin/python /home/build/run-ybd.py
