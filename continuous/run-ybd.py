@@ -23,6 +23,7 @@ import yaml
 import glob
 import itertools
 import os
+import shutil
 import socket
 import subprocess
 
@@ -92,9 +93,18 @@ while True:
 
     old_artifacts_dir = create_artifacts_directory('/home/build/old-artifacts')
 
-    for artifact in glob.glob('/home/build/ybd-artifacts/*'):
-        subprocess.check_call(
-            ['/home/cache/morph-cache-server/scripts/submit-build',
-             '--host=localhost', '--builder-name=%s' % BUILDER_NAME, artifact])
+    artifacts = glob.glob('/home/build/artifacts/*')
 
-        os.move(artifact, old_artifacts_dir)
+    if len(artifacts) == 0:
+        raise RuntimeError("Build didn't produce any artifacts.")
+
+    for artifact in artifacts:
+        if artifact.endwith('.unpacked'):
+            shutil.rmtree(artifact)
+        else:
+            subprocess.check_call(
+                ['/home/cache/morph-cache-server/scripts/submit-build',
+                 '--host=localhost', '--builder-name=%s' % BUILDER_NAME,
+                 artifact])
+
+            shutil.move(artifact, old_artifacts_dir)
