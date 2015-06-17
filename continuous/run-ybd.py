@@ -50,6 +50,13 @@ def set_ybd_config(def_file):
     settings['artifacts'] = '/home/build/artifacts'
     settings['ccache_dir'] = '/home/build/ccache'
     settings['gits'] = '/home/build/gits'
+    # This must be on the same partition as 'artifacts' dir, or staging
+    # area construction will fail.
+    settings['tmp'] = '/home/build/tmp'
+    settings['deployment'] = '/home/build/tmp/deployments'
+    # I don't think these do anything, but to be on the safe side...
+    settings['base'] = '/home/build/'
+    settings['caches'] = '/home/build/'
     with open(def_file, 'w') as f:
         yaml.dump(settings, f)
 
