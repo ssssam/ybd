@@ -44,8 +44,9 @@ def create_artifacts_directory(prefix='artifacts'):
             return path
 
 
-def set_ybd_config(def_file):
-    with open(def_file, 'r') as f:
+def set_ybd_config(in_def_file, out_def_file=None):
+    out_def_file = out_def_file or in_def_file
+    with open(in_def_file, 'r') as f:
         settings = yaml.safe_load(f.read())
     settings['artifacts'] = '/home/build/artifacts'
     settings['ccache_dir'] = '/home/build/ccache'
@@ -57,13 +58,12 @@ def set_ybd_config(def_file):
     # I don't think these do anything, but to be on the safe side...
     settings['base'] = '/home/build/'
     settings['caches'] = '/home/build/'
-    with open(def_file, 'w') as f:
+    with open(out_def_file, 'w') as f:
         yaml.dump(settings, f)
 
 
 while True:
-    set_ybd_config('/home/build/ybd/ybd.def')
-
+    ybd_dir = '/home/build/ybd'
     definitions_dir = '/home/build/definitions'
 
     # FIXME: might be good to autoupdate YBD as well as definitions.
@@ -75,10 +75,17 @@ while True:
              definitions_dir])
     else:
         subprocess.check_call(
-            ['git', 'pull', 'origin', 'HEAD'], cwd=definitions_dir)
+            ['git', 'pull', '--force', 'origin', 'HEAD'],
+            cwd=definitions_dir)
 
+    set_ybd_config(
+        os.path.join(ybd_dir, 'ybd.def'),
+        os.path.join(definitions_dir, 'ybd.def')
+    )
+
+    ybd = os.path.join(ybd_dir, 'ybd.py')
     subprocess.check_call(
-        ['/home/build/ybd/ybd.py', 'systems/build-system-x86_64.morph'],
+        [ybd, 'systems/build-system-x86_64.morph'],
         cwd=definitions_dir)
 
     # After the build, old artifacts get put in a separate directory.
