@@ -34,8 +34,8 @@ BUILDER_NAME = 'http://%s' % socket.gethostname()
 def create_artifacts_directory(prefix='artifacts'):
     '''Create a new directory to store output of a build.
 
-    The directory will be named artifacts-0, unless that directory already
-    exists, in which case it will be named artifacts-1, and so on.
+    The directory will be named $prefix-0, unless that directory already
+    exists, in which case it will be named $prefix-1, and so on.
 
     '''
     for i in itertools.count():
@@ -78,6 +78,9 @@ while True:
         subprocess.check_call(
             ['git', 'pull', '--force', 'origin', 'HEAD'],
             cwd=definitions_dir)
+    definitions_sha1 = subprocess.check_output(
+        ['git', 'rev-parse', 'HEAD'],
+        cwd=definitions_dir).strip()
 
     set_ybd_config(
         os.path.join(ybd_dir, 'ybd.def'),
@@ -91,7 +94,8 @@ while True:
 
     # After the build, old artifacts get put in a separate directory.
 
-    old_artifacts_dir = create_artifacts_directory('/home/build/old-artifacts')
+    old_artifacts_dir = create_artifacts_directory(
+        prefix='/home/build/artifacts-%s' % definitions_sha1[:8])
 
     artifacts = glob.glob('/home/build/artifacts/*')
 
