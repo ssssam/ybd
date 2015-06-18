@@ -1,8 +1,22 @@
-# Ansible playbook to deploy Sam's YBD continuous build hack.
+# Ansible playbook to deploy a prototype YBD continuous builder.
 #
-# Work in progress / example.
+# This playbook was tested against a Baserock 15.19.2 'build' system on x86_64.
+# It may work on other operating systems. It will add 'build' and 'cache' users
+# to the system, and set up services running YBD, and a patched version of
+# 'morph-cache-server'. All data is stored in /home/build and /home/cache.
 #
-# Tested on a Baserock 15.19.2 devel system on x86_64, so far.
+# To run , you need to use `ansible-playbook`. First, create a 'hosts' file
+# pointing to the deployment target. You need to set `ansible_ssh_user=root` as
+# well.
+#
+# Example contents of the 'hosts' file:
+#
+#   185.98.148.127  ansible_ssh_user=root
+#
+# You can then run this playbook as follows, from the root of the ybd.git repo:
+#
+#   ansible-playbook -i hosts continuous/deploy.yaml
+#
 ---
 - hosts: all
   tasks:
