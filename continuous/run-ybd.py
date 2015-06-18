@@ -99,7 +99,7 @@ while True:
         raise RuntimeError("Build didn't produce any artifacts.")
 
     for artifact in artifacts:
-        if artifact.endwith('.unpacked'):
+        if artifact.endswith('.unpacked'):
             shutil.rmtree(artifact)
         else:
             subprocess.check_call(
