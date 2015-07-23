@@ -52,15 +52,11 @@ _STRIP_COMMAND = r'''find "$DESTDIR" -type f \
 
 class BuildSystem(object):
 
-    '''An abstraction of an upstream build system.
+    '''Predefined commands for common build systems.
 
-    Some build systems are well known: autotools, for example.
-    Others are purely manual: there's a set of commands to run that
-    are specific for that project, and (almost) no other project uses them.
-    The Linux kernel would be an example of that.
-
-    This class provides an abstraction for these, including a method
-    to autodetect well known build systems.
+    Some build systems are well known: autotools, for example. We provide
+    pre-defined build commands for these so that they don't need to be copied
+    and pasted many times in the build instructions.
 
     '''
 
@@ -94,9 +90,6 @@ class ManualBuildSystem(BuildSystem):
         self.commands['build-commands'] = []
         self.commands['install-commands'] = []
 
-    def used_by_project(self, file_list):
-        return False
-
 
 class AutotoolsBuildSystem(BuildSystem):
 
@@ -122,18 +115,6 @@ class AutotoolsBuildSystem(BuildSystem):
             'make DESTDIR="$DESTDIR" install',
         ]
 
-    def used_by_project(self, file_list):
-        indicators = [
-            'autogen',
-            'autogen.sh',
-            'configure',
-            'configure.ac',
-            'configure.in',
-            'configure.in.in',
-        ]
-
-        return any(x in file_list for x in indicators)
-
 
 class PythonDistutilsBuildSystem(BuildSystem):
 
@@ -153,13 +134,6 @@ class PythonDistutilsBuildSystem(BuildSystem):
         self.commands['install-commands'] = [
             'python setup.py install --prefix "$PREFIX" --root "$DESTDIR"',
         ]
-
-    def used_by_project(self, file_list):
-        indicators = [
-            'setup.py',
-        ]
-
-        return any(x in file_list for x in indicators)
 
 
 class CPANBuildSystem(BuildSystem):
@@ -188,13 +162,6 @@ class CPANBuildSystem(BuildSystem):
             'make DESTDIR="$DESTDIR" install',
         ]
 
-    def used_by_project(self, file_list):
-        indicators = [
-            'Makefile.PL',
-        ]
-
-        return any(x in file_list for x in indicators)
-
 
 class CMakeBuildSystem(BuildSystem):
 
@@ -215,13 +182,6 @@ class CMakeBuildSystem(BuildSystem):
         self.commands['install-commands'] = [
             'make DESTDIR="$DESTDIR" install',
         ]
-
-    def used_by_project(self, file_list):
-        indicators = [
-            'CMakeLists.txt',
-        ]
-
-        return any(x in file_list for x in indicators)
 
 
 class QMakeBuildSystem(BuildSystem):
@@ -244,14 +204,6 @@ class QMakeBuildSystem(BuildSystem):
             'make INSTALL_ROOT="$DESTDIR" install',
         ]
 
-    def used_by_project(self, file_list):
-        indicator = '.pro'
-
-        for x in file_list:
-            if x.endswith(indicator):
-                return True
-
-        return False
 
 build_systems = [
     AutotoolsBuildSystem(),
@@ -262,11 +214,14 @@ build_systems = [
 ]
 
 
-def detect_build_system(file_list):
+def lookup_build_system(name):
+    '''Return build system that corresponds to the name.
 
-    '''Automatically detect the build system, if possible.'''
+    If the name does not match any build system, raise ``KeyError``.
 
-    for build_system in build_systems:
-        if build_system.used_by_project(file_list):
-            return build_system
-    return ManualBuildSystem()
+    '''
+
+    for bs in build_systems:
+        if bs.name == name:
+            return bs
+    raise KeyError('Unknown build system: %s' % name)

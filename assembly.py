@@ -179,11 +179,12 @@ def build(defs, this):
 
 
 def get_build_commands(defs, this):
-    '''Get commands specified in this, plus commmands implied by build_system
+    '''Get the command sequence to run, for a given chunk reference.
 
-    If definition file doesn't exist, detect bs and use its commands.
-    If bs is unspecified assume it's the manual build system.
-    Use commands from the build system to fill in empty steps.
+    The chunk reference may either point to a file defining the commands
+    (with the "morph" field), or may specify a predefined build system (with
+    the "build-system" field).
+
     '''
 
     if this.get('kind', None) == "system":
@@ -197,8 +198,7 @@ def get_build_commands(defs, this):
             if this.get('build-system') == bs.name:
                 build_system = bs
     else:
-        files = os.listdir(this['build'])
-        build_system = buildsystem.detect_build_system(files)
+        build_system = buildsystem.lookup_build_system(this['build-system'])
 
     for build_step in buildsystem.build_steps:
         if this.get(build_step, None) is None:
