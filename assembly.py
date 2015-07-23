@@ -189,11 +189,6 @@ def get_build_commands(defs, this):
     The definition containing build instructions can specify a predefined
     build-system and then override some or all of the command sequences it
     defines.
-
-    If the definition file doesn't exist and no build-system is specified,
-    this function will scan the contents the checked-out source repo and try
-    to autodetect what build system is used.
-
     '''
 
     if this.get('kind', None) == "system":
@@ -201,19 +196,8 @@ def get_build_commands(defs, this):
         this['install-commands'] = gather_integration_commands(defs, this)
         return
 
-    build_system = None
-    if 'build-system' in this:
-        build_system = buildsystem.lookup_build_system(this['build-system'])
-    else:
-        if os.path.exists(this['path']):
-            build_system = buildsystem.lookup_build_system(
-                this.get('build-system'),
-                default=buildsystem.ManualBuildSystem)
-        else:
-            files = os.listdir(this['build'])
-            build_system = buildsystem.detect_build_system(files)
-            app.log(this, 'Attempting to autodetect build system, got:',
-                    build_system.name)
+    build_system_name = this.get('build-system', 'manual')
+    build_system = buildsystem.lookup_build_system(build_system_name)
 
     for build_step in buildsystem.build_steps:
         if this.get(build_step, None) is None:
