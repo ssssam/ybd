@@ -203,12 +203,12 @@ def get_build_commands(defs, this):
 
     build_system = None
     if 'build-system' in this:
-        build_system = buildsystem.lookup_build_system(this['build-system'])
+        build_system = defs.lookup_build_system(this['build-system'])
     else:
         if os.path.exists(this['path']):
-            build_system = buildsystem.lookup_build_system(
+            build_system = defs.lookup_build_system(
                 this.get('build-system'),
-                default=buildsystem.ManualBuildSystem)
+                default=buildsystem.ManualBuildSystem())
         else:
             files = os.listdir(this['build'])
             build_system = buildsystem.detect_build_system(files)

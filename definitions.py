@@ -14,12 +14,16 @@
 #
 # =*= License: GPL-2 =*=
 
+
 import yaml
+
+import hashlib
 import os
+from subprocess import check_output, PIPE
+
 import app
 import cache
-from subprocess import check_output, PIPE
-import hashlib
+import buildsystem
 
 
 class Definitions(object):
@@ -52,20 +56,48 @@ class Definitions(object):
                             js.validate(definition_data, definitions_schema)
                         self._tidy_and_insert_recursively(definition_data)
 
+        self.build_systems = self._load_defaults('./DEFAULTS')
+
         if self._check_trees():
             for name in self._definitions:
                 self._definitions[name]['tree'] = self._trees.get(name)
 
-    def _load(self, path):
+    def _load(self, path, ignore_errors=True):
         try:
             with open(path) as f:
-                text = f.read()
-            contents = yaml.safe_load(text)
+                contents = yaml.safe_load(f)
         except:
-            app.log('DEFINITIONS', 'WARNING: problem loading', path)
-            return None
+            if ignore_errors:
+                app.log('DEFINITIONS', 'WARNING: problem loading', path)
+                return None
+            else:
+                raise
         contents['path'] = path[2:]
         return contents
+
+    def _load_defaults(self, defaults_filename='./DEFAULTS'):
+        '''Get defaults, either from a DEFAULTS file, or built-in defaults.
+
+        Returns a dict of predefined build-systems.
+        '''
+
+        build_systems = {}
+
+        data = self._load(defaults_filename, ignore_errors=True)
+        if data is None:
+            # No DEFAULTS file, use builtins.
+            for build_system in buildsystem.build_systems:
+                build_systems[build_system.name] = build_system
+        else:
+            # FIXME: do validation against schemas/defaults.json-schema.
+            build_system_data = data.get('build-systems', {})
+
+            for name, commands in build_system_data.items():
+                build_system = buildsystem.BuildSystem()
+                build_system.from_dict(name, commands)
+                build_systems[name] = build_system
+
+        return build_systems
 
     def _tidy_and_insert_recursively(self, definition):
         '''Insert a definition and its contents into the dictionary.
@@ -203,3 +235,16 @@ class Definitions(object):
 
         with open(os.path.join(os.getcwd(), '.trees'), 'w') as f:
             f.write(yaml.dump(self._trees, default_flow_style=False))
+
+    def lookup_build_system(self, name, default=None):
+        '''Return build system that corresponds to the name.
+
+        If the name does not match any build system, raise ``KeyError``.
+
+        '''
+        if name in self.build_systems:
+            return self.build_systems[name]
+        elif default:
+            return default
+        else:
+            raise KeyError("Undefined build-system %s" % name)

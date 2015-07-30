@@ -52,15 +52,10 @@ _STRIP_COMMAND = r'''find "$DESTDIR" -type f \
 
 class BuildSystem(object):
 
-    '''An abstraction of an upstream build system.
+    '''Predefined command sequences for a given build system.
 
-    Some build systems are well known: autotools, for example.
-    Others are purely manual: there's a set of commands to run that
-    are specific for that project, and (almost) no other project uses them.
-    The Linux kernel would be an example of that.
-
-    This class provides an abstraction for these, including a method
-    to autodetect well known build systems.
+    For example, you can have an 'autotools' build system, which runs
+    'configure', 'make' and 'make install'.
 
     '''
 
@@ -71,6 +66,11 @@ class BuildSystem(object):
     def __getitem__(self, key):
         key = '_'.join(key.split('-'))
         return getattr(self, key)
+
+    def from_dict(self, name, commands):
+        self.name = name
+
+        self.commands.update(commands)
 
     def used_by_project(self, file_list):
         '''Does a project use this build system?
@@ -253,6 +253,7 @@ class QMakeBuildSystem(BuildSystem):
 
         return False
 
+
 build_systems = [
     ManualBuildSystem(),
     AutotoolsBuildSystem(),
@@ -271,19 +272,3 @@ def detect_build_system(file_list):
         if build_system.used_by_project(file_list):
             return build_system
     return ManualBuildSystem()
-
-
-def lookup_build_system(name, default=None):
-    '''Return build system that corresponds to the name.
-
-    If the name does not match any build system, raise ``KeyError``.
-
-    '''
-
-    for bs in build_systems:
-        if bs.name == name:
-            return bs
-    if default:
-        return default()
-    else:
-        raise KeyError('Unknown build system: %s' % name)
