@@ -243,13 +243,12 @@ def install_dependencies(defs, component):
                 continue
 
             install(defs, component, dependency.get('build-depends', []))
-            if (it in component['build-depends']) or \
-                (dependency.get('build-mode', 'staging') ==
-                    component.get('build-mode', 'staging')):
-                compose(defs, dependency)
-                if dependency.get('contents'):
-                    install(defs, component, dependency.get('contents'))
-                sandbox.install(defs, component, dependency)
+            # XXX Temporary workaround... we want to install
+            # some of the things which required build-mode prelibc !!!
+            compose(defs, dependency)
+            if dependency.get('contents'):
+                install(defs, component, dependency.get('contents'))
+            sandbox.install(defs, component, dependency)
 
     component = defs.get(component)
     dependencies = component.get('build-depends', [])
