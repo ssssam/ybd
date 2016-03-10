@@ -30,7 +30,7 @@ from shutil import copyfile
 import time
 import datetime
 import splitting
-
+import virtfs
 
 class RetryException(Exception):
     def __init__(self, defs, component):
@@ -129,6 +129,7 @@ def run_build(defs, this):
 
     if this.get('repo'):
         repos.checkout(this)
+        virtfs.stage_directory(this['build'])
         this['SOURCE_DATE_EPOCH'] = repos.source_date_epoch(this['build'])
 
     get_build_commands(defs, this)
