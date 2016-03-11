@@ -43,7 +43,6 @@ so for a Debian-based system:
 
 ybd also depends on [pyfilesystem](http://pyfilesystem.org),
 [pyyaml](http://pyyaml.org/wiki/PyYAML),
-[sandboxlib](https://github.com/CodethinkLabs/sandboxlib),
 [requests](https://github.com/kennethreitz/requests),
 and optionally [jsonschema](https://github.com/Julian/jsonschema).
 
@@ -58,7 +57,7 @@ if you trust the Python Package Index (PyPI) and pip is available on your
 machine, you can install these dependencies with:
 
 ```
-    pip install fs pyyaml sandboxlib requests jsonschema bottle cherrypy riemann-client
+    pip install fs pyyaml requests jsonschema bottle cherrypy riemann-client
 ```
 
 If you need to install pip itself:
