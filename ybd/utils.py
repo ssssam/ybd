@@ -226,60 +226,6 @@ def _process_list(srcdir, destdir, filelist, actionfunc):
                           ' type.' % srcpath)
 
 
-def make_deterministic_gztar_archive(base_name, root_dir, time=1321009871.0):
-    '''Make a gzipped tar archive of contents of 'root_dir'.
-
-    This function takes extra steps to ensure the output is deterministic,
-    compared to shutil.make_archive(). First, it sorts the results of
-    os.listdir() to ensure the ordering of the files in the archive is the
-    same. Second, it sets a fixed timestamp and filename in the gzip header.
-
-    As well as fixing https://bugs.python.org/issue24465, to make this function
-    redundant we would need to patch shutil.make_archive() so we could manually
-    set the timestamp and filename set in the gzip file header.
-
-    '''
-    # It's hard to implement this function by monkeypatching
-    # shutil.make_archive() because of the way the tarfile module includes the
-    # filename of the tarfile in the gzip header. So we have to reimplement
-    # shutil.make_archive().
-
-    def add_directory_to_tarfile(f_tar, dir_name, dir_arcname):
-        for filename in sorted(os.listdir(dir_name)):
-            name = os.path.join(dir_name, filename)
-            arcname = os.path.join(dir_arcname, filename)
-
-            f_tar.add(name=name, arcname=arcname, recursive=False)
-
-            if os.path.isdir(name) and not os.path.islink(name):
-                add_directory_to_tarfile(f_tar, name, arcname)
-
-    with open(base_name + '.tar.gz', 'wb') as f:
-        gzip_context = gzip.GzipFile(
-            filename='', mode='wb', fileobj=f, mtime=time)
-        with gzip_context as f_gzip:
-            with tarfile.TarFile(mode='w', fileobj=f_gzip) as f_tar:
-                add_directory_to_tarfile(f_tar, root_dir, '.')
-
-
-def make_deterministic_tar_archive(base_name, root_dir):
-    '''Make a tar archive of contents of 'root_dir'.
-
-    This function uses monkeypatching to make shutil.make_archive() create
-    a deterministic tarfile.
-
-    https://bugs.python.org/issue24465 will make this function redundant.
-
-    '''
-    real_listdir = os.listdir
-
-    def stable_listdir(path):
-        return sorted(real_listdir(path))
-
-    with monkeypatch(os, 'listdir', stable_listdir):
-        shutil.make_archive(base_name, 'tar', root_dir)
-
-
 def _find_extensions(paths):
     '''Iterate the paths, in order, finding extensions and adding them to
     the return dict.'''
@@ -308,19 +254,3 @@ def sorted_ls(path):
         return os.stat(os.path.join(path, f)).st_mtime
     return list(sorted(os.listdir(path), key=mtime))
 
-
-@contextlib.contextmanager
-def monkeypatch(obj, attr, new_value):
-    '''Temporarily override the attribute of some object.
-
-    For example, to override the time.time() function, so that it returns a
-    fixed timestamp, you could do:
-
-        with monkeypatch(time, 'time', lambda: 1234567):
-            print time.time()
-
-    '''
-    old_value = getattr(obj, attr)
-    setattr(obj, attr, new_value)
-    yield
-    setattr(obj, attr, old_value)
