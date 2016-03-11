@@ -25,8 +25,6 @@ from assembly import compose, RetryException
 from deployment import deploy
 from definitions import Definitions
 import cache
-import sandbox
-import sandboxlib
 
 
 print('')
@@ -62,12 +60,6 @@ with app.timer('TOTAL'):
     if app.config.get('mode', 'normal') == 'keys-only':
         print target['cache']
         os._exit(0)
-
-    sandbox.executor = sandboxlib.executor_for_platform()
-    app.log(app.config['target'], 'Sandbox using %s' % sandbox.executor)
-    if sandboxlib.chroot == sandbox.executor:
-        app.log(app.config['target'], 'WARNING: using chroot is less safe ' +
-                'than using linux-user-chroot')
 
     if app.config.get('instances'):
         app.spawn()
