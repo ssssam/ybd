@@ -28,6 +28,7 @@ import repos
 import utils
 import tempfile
 import yaml
+import virtfs
 
 cache_list = {}
 
@@ -116,16 +117,16 @@ def cache(defs, this):
     tmpdir = tempfile.mkdtemp()
     cachefile = os.path.join(tmpdir, cache_key(defs, this))
     if this.get('kind') == "system":
+
+        # XXX Do we need this ? Will this fail miserably ? Does
+        # this assume something is done with host tooling instead
+        # of being done properly in the sandbox ?
         utils.hardlink_all_files(this['install'], this['sandbox'])
         shutil.rmtree(this['install'])
         shutil.rmtree(this['build'])
-        utils.set_mtime_recursively(this['sandbox'])
-        utils.make_deterministic_tar_archive(cachefile, this['sandbox'])
-        shutil.move('%s.tar' % cachefile, cachefile)
+        virtfs.collect_artifact(cachefile, this['sandbox'], compress=False)
     else:
-        utils.set_mtime_recursively(this['install'])
-        utils.make_deterministic_gztar_archive(cachefile, this['install'])
-        shutil.move('%s.tar.gz' % cachefile, cachefile)
+        virtfs.collect_artifact(cachefile, this['install'])
 
     app.config['counter'].increment()
     unpack(defs, this, cachefile)
@@ -140,7 +141,10 @@ def cache(defs, this):
 def unpack(defs, this, tmpfile):
     unpackdir = tmpfile + '.unpacked'
     os.makedirs(unpackdir)
-    if call(['tar', 'xf', tmpfile, '--directory', unpackdir]):
+
+    try:
+        virtfs.stage_artifact(tmpfile, unpackdir)
+    except:
         app.log(this, 'Problem unpacking', tmpfile)
         shutil.rmtree(os.path.dirname(tmpfile))
         return False
@@ -208,9 +212,12 @@ def get_cache(defs, this):
         if not os.path.isdir(unpackdir):
             tempfile.tempdir = app.config['tmp']
             tmpdir = tempfile.mkdtemp()
-            if call(['tar', 'xf', artifact, '--directory', tmpdir]):
+            try:
+                virtfs.stage_artifact(artifact, tmpdir)
+            except:
                 app.log(this, 'Problem unpacking', artifact)
                 return False
+
             try:
                 shutil.move(tmpdir, unpackdir)
             except:
