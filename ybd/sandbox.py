@@ -164,7 +164,10 @@ def run_sandboxed(this, command, env=None, allow_parallel=False):
     if app.config.get('log-verbose'):
         launchArgs.append('--verbose')
 
-    launchArgs.append('./build.sh > build.log 2>&1')
+    # It's important to redirect stdin to /dev/null, otherwise some
+    # build scripts trying to be smart think that there is a tty
+    # and call things like tput to set bold face (looking at gnome-autogen.sh)
+    launchArgs.append('./build.sh > build.log 2>&1 < /dev/null')
 
     # Tail the build log into the expected location while the build runs
     exit_code = call(launchArgs)
