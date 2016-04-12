@@ -32,13 +32,14 @@ def _aboriginal_start():
     # Assert configuration
     #
     if 'aboriginal-controller' not in app.config:
-        app.exit(this, 'ERROR: required configuration not specified:', 'aboriginal-controller')
+        app.exit('SETUP', 'ERROR: required configuration not specified:', 'aboriginal-controller')
     if 'aboriginal-system' not in app.config:
-        app.exit(this, 'ERROR: required configuration not specified:', 'aboriginal-system')
+        app.exit('SETUP', 'ERROR: required configuration not specified:', 'aboriginal-system')
 
     #
     # Ensure we have a worker for this instance
     #
+    app.log('SETUP', "Ensuring an Aboriginal build worker is running")
     workdir = os.path.join(app.config['workers'], ('worker-' + str(app.config.get('fork', 0))))
     aboriginal_start = os.path.join(app.config['aboriginal-controller'], 'aboriginal-start')
     check_call([ aboriginal_start,
